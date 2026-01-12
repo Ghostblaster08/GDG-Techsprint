@@ -78,3 +78,46 @@ class ResumeData(models.Model):
     def __str__(self):
         return f"Resume of {self.user.name}"
 
+
+class InterviewAnalysis(models.Model):
+    """
+    Post-interview analysis with AI-powered performance insights and integrity detection
+    """
+    user = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name='interview_analyses')
+    
+    # File information (not permanently stored, just metadata)
+    recording_filename = models.CharField(max_length=255, blank=True, null=True)
+    recording_duration_seconds = models.IntegerField(default=0)
+    
+    # Personal Performance Report
+    emotion_trend = models.TextField(blank=True, null=True, help_text="Emotional pattern observed throughout the interview")
+    confidence_score = models.IntegerField(default=0, help_text="Confidence level 0-100")
+    communication_analysis = models.TextField(blank=True, null=True, help_text="Analysis of communication clarity and style")
+    strengths = models.JSONField(default=list, blank=True, help_text="List of observed strengths")
+    improvements = models.JSONField(default=list, blank=True, help_text="List of suggested improvements")
+    
+    # Integrity Analysis (behavioral indicators only, not deterministic)
+    eye_movement_pattern = models.TextField(blank=True, null=True, help_text="Observed eye movement behavior")
+    attention_level = models.CharField(max_length=50, blank=True, null=True, help_text="low, moderate, or high")
+    suspicion_risk = models.CharField(max_length=50, blank=True, null=True, help_text="low, medium, or high")
+    integrity_notes = models.TextField(blank=True, null=True, help_text="Behavioral observations")
+    
+    # Relative Ranking (among participants on the call)
+    ranking_position = models.IntegerField(default=0, help_text="Position among participants")
+    total_participants = models.IntegerField(default=1, help_text="Total participants analyzed")
+    percentile_band = models.CharField(max_length=50, blank=True, null=True, help_text="Performance percentile")
+    
+    # Raw AI response for debugging
+    raw_ai_response = models.JSONField(default=dict, blank=True)
+    
+    # Timestamps
+    analyzed_at = models.DateTimeField(default=timezone.now)
+    
+    class Meta:
+        db_table = 'interview_analyses'
+        ordering = ['-analyzed_at']
+        verbose_name_plural = 'Interview Analyses'
+    
+    def __str__(self):
+        return f"Interview Analysis for {self.user.name} on {self.analyzed_at.strftime('%Y-%m-%d')}"
+

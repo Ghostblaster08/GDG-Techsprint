@@ -265,3 +265,179 @@ Return ONLY the JSON object:"""
         import traceback
         traceback.print_exc()
         return None
+
+
+def analyze_interview_recording(video_file, participant_count=1):
+    """
+    Analyze interview recording to generate:
+    1. Personal performance analysis
+    2. Integrity/behavioral indicators
+    3. Relative ranking among participants
+    
+    CRITICAL: Uses rule-based prompting to ensure unique, evidence-based outputs.
+    NO hardcoded examples. NO generic templates. Each analysis must be original.
+    
+    Args:
+        video_file: Uploaded video/audio file object
+        participant_count: Number of participants in the recording (default 1 for solo interview)
+    
+    Returns:
+        dict: Structured analysis results
+    """
+    # Check if API key is configured
+    if not GEMINI_API_KEY or GEMINI_API_KEY == 'your_gemini_api_key_here':
+        print("Gemini API key not configured, returning error")
+        return {
+            "error": "Gemini API key not configured. Please set GEMINI_API_KEY in .env file."
+        }
+    
+    try:
+        # Upload file to Gemini for analysis
+        print(f"📤 Uploading {video_file.name} to Gemini API for analysis...")
+        uploaded_file = genai.upload_file(video_file.temporary_file_path(), mime_type=video_file.content_type)
+        print(f"✅ File uploaded: {uploaded_file.name}")
+        
+        # Wait for file to be processed
+        import time
+        while uploaded_file.state.name == "PROCESSING":
+            print("⏳ Processing video...")
+            time.sleep(2)
+            uploaded_file = genai.get_file(uploaded_file.name)
+        
+        if uploaded_file.state.name == "FAILED":
+            raise ValueError("Video processing failed")
+        
+        print(f"✅ Video ready for analysis")
+        
+        # Initialize Gemini model (using gemini-2.5-flash as required)
+        model = genai.GenerativeModel('models/gemini-2.5-flash')
+        
+        # CRITICAL: Rule-based prompt that forces unique, evidence-specific outputs
+        prompt = f"""You are an expert behavioral analyst conducting a post-interview performance review.
+
+ANALYZE the provided interview recording and generate a comprehensive, ORIGINAL assessment.
+
+⚠️ CRITICAL REQUIREMENTS:
+1. Base ALL observations on actual visible/audible evidence from THIS specific recording
+2. Use DIFFERENT phrasing for every analysis - never repeat templated language
+3. Describe patterns observed over TIME, not isolated moments
+4. Vary your vocabulary and sentence structure naturally
+5. Ground every claim in specific behavioral evidence
+6. If analyzing multiple participants, compare their relative performance
+
+📋 ANALYSIS FRAMEWORK:
+
+I. EMOTIONAL & CONFIDENCE ANALYSIS
+- Observe facial expressions, body language, and vocal tone patterns throughout the recording
+- Track how emotional state evolves from beginning to end
+- Assess confidence based on: speech fluency, hesitation frequency, posture changes, eye contact
+- Calculate confidence score (0-100) based on observable behavioral cues
+- Use evidence-specific descriptors, NOT generic labels like "calm" or "nervous"
+
+II. COMMUNICATION QUALITY
+- Evaluate articulation, clarity, pacing, and coherence
+- Note any hesitations, filler words, or communication barriers
+- Assess how effectively ideas are conveyed
+- Identify communication strengths and areas for improvement
+
+III. BEHAVIORAL INTEGRITY INDICATORS (NOT Deterministic)
+- Analyze eye movement patterns: scanning behavior, gaze direction, focus consistency
+- Assess attention level: engagement with questions, distraction signs, focus duration
+- Estimate integrity risk (low/medium/high) based on behavioral anomalies:
+  * Frequent looking away from screen (may indicate reading from notes)
+  * Sudden changes in speech patterns (may indicate external input)
+  * Unnatural pauses or delays (may indicate searching for information)
+  * Inconsistent eye contact or gaze patterns
+- IMPORTANT: These are behavioral observations only, NOT accusations
+
+IV. STRENGTHS & IMPROVEMENTS
+- Identify 3-5 specific strengths demonstrated in THIS recording
+- Suggest 3-5 concrete improvements based on observed gaps
+- Use evidence from the recording to support each point
+- Be specific and actionable
+
+V. RELATIVE RANKING (if multiple participants detected)
+- Compare performance across participants on this call
+- Rank based on: communication clarity, technical depth, confidence, engagement
+- Calculate relative percentile band
+- Total participants: {participant_count}
+
+🎯 OUTPUT FORMAT:
+Return ONLY a valid JSON object following this exact structure:
+
+{{
+  "personal_report": {{
+    "emotion_trend": "<describe the emotional progression/pattern you observed throughout - use specific behavioral descriptors>",
+    "confidence_score": <integer 0-100 based on observable cues>,
+    "communication": "<specific analysis of how this person communicated - cite actual patterns you noticed>",
+    "strengths": [
+      "<specific strength #1 with evidence from recording>",
+      "<specific strength #2 with evidence from recording>",
+      "<specific strength #3 with evidence from recording>"
+    ],
+    "improvements": [
+      "<specific improvement #1 based on observed gaps>",
+      "<specific improvement #2 based on observed gaps>",
+      "<specific improvement #3 based on observed gaps>"
+    ]
+  }},
+  "integrity_analysis": {{
+    "eye_movement": "<describe the actual eye movement pattern you observed - be specific about what you saw>",
+    "attention_level": "<low|moderate|high - based on engagement cues>",
+    "suspicion_risk": "<low|medium|high - based on behavioral anomalies>",
+    "notes": "<explain WHY you assigned this risk level - what specific behaviors led to this assessment>"
+  }},
+  "ranking": {{
+    "position": <integer position among participants>,
+    "total_participants": {participant_count},
+    "percentile": "<e.g., 'Top 25%', 'Upper Middle 50%', 'Bottom 25%' - based on relative comparison>"
+  }},
+  "disclaimer": "This analysis provides behavioral insights only and should not be used as the sole basis for hiring decisions. Integrity indicators are probabilistic, not deterministic."
+}}
+
+⚠️ REMEMBER:
+- Generate ORIGINAL content based on THIS recording
+- Use VARIED language - never copy phrasing from previous analyses
+- Ground observations in ACTUAL evidence
+- Confidence score must reflect observable behavioral cues
+- Integrity risk is a behavioral probability, NOT a verdict
+
+Now analyze the interview recording and return ONLY the JSON object:"""
+
+        # Generate analysis
+        print("🤖 Generating AI analysis...")
+        response = model.generate_content([uploaded_file, prompt])
+        result_text = response.text.strip()
+        
+        # Parse JSON response
+        if '```json' in result_text:
+            result_text = result_text.split('```json')[1].split('```')[0].strip()
+        elif '```' in result_text:
+            result_text = result_text.split('```')[1].split('```')[0].strip()
+        
+        # Extract JSON object
+        start_idx = result_text.find('{')
+        end_idx = result_text.rfind('}') + 1
+        if start_idx != -1 and end_idx > start_idx:
+            result_text = result_text[start_idx:end_idx]
+        
+        analysis_result = json.loads(result_text)
+        
+        print("✅ Analysis complete")
+        print(f"   Confidence Score: {analysis_result.get('personal_report', {}).get('confidence_score', 'N/A')}")
+        print(f"   Suspicion Risk: {analysis_result.get('integrity_analysis', {}).get('suspicion_risk', 'N/A')}")
+        print(f"   Ranking: {analysis_result.get('ranking', {}).get('position', 'N/A')}/{participant_count}")
+        
+        # Clean up uploaded file
+        genai.delete_file(uploaded_file.name)
+        print("🗑️ Temporary file deleted from Gemini")
+        
+        return analysis_result
+        
+    except Exception as e:
+        print(f"❌ Error analyzing interview with Gemini: {e}")
+        import traceback
+        traceback.print_exc()
+        return {
+            "error": f"Failed to analyze interview recording: {str(e)}"
+        }
