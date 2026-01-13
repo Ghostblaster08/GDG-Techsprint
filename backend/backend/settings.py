@@ -26,7 +26,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-ltx5xg2#elku^b#u!y*pi
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'gdg-techsprint.onrender.com,your-app.vercel.app,localhost,127.0.0.1').split(',')
 
 
 # Application definition
@@ -130,15 +130,28 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# CORS Settings
+# CORS Configuration
+CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
     "http://localhost:3000",
-    "http://127.0.0.1:5173",
     "http://127.0.0.1:3000",
+    "https://gdg-techsprint-nine.vercel.app/",  # Add your Vercel domain
+    "https://gdg-techsprint.onrender.com",       # Add custom domain if you have one
 ]
 
-CORS_ALLOW_CREDENTIALS = True
+# Or allow all Vercel domains (less secure):
+# CORS_ALLOWED_ORIGIN_REGEXES = [
+#     r"^https://.*\.vercel\.app$",
+# ]
+
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
 
 CORS_ALLOW_HEADERS = [
     'accept',
@@ -166,3 +179,15 @@ REST_FRAMEWORK = {
 # Media files (uploaded files)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# Cookie settings
+SESSION_COOKIE_SECURE = not DEBUG  # True in production (HTTPS)
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'None' if not DEBUG else 'Lax'  # 'None' for cross-origin
+
+CSRF_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_HTTPONLY = False  # JavaScript needs to read this
+CSRF_COOKIE_SAMESITE = 'None' if not DEBUG else 'Lax'
+
+# Trust proxy headers (important for Render)
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
