@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
-# exit on error
 set -o errexit
 
+pip install --upgrade pip setuptools wheel
 pip install -r requirements.txt
 
-python manage.py collectstatic --no-input
-python manage.py migrate
+python backend/manage.py collectstatic --noinput
