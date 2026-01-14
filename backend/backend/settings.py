@@ -151,13 +151,14 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:3000",
     "http://localhost:5173",  # Vite dev server
     "https://gdg-techsprint-nine.vercel.app",
-    "https://gdg-techsprint.onrender.com",
+    "https://gdg-techsprint-1.onrender.com",
 ]
 
 # Allow all Vercel preview deployments
 import re
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^https://.*\.vercel\.app$",
+    r"^https://.*\.onrender\.com$",
 ]
 
 # Or allow all Vercel domains (less secure):
