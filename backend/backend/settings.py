@@ -26,7 +26,15 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-ltx5xg2#elku^b#u!y*pi
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*.onrender.com,*.vercel.app,localhost,127.0.0.1').split(',')
+# Django ALLOWED_HOSTS - use .domain.com for wildcard subdomains
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    '.onrender.com',  # Allows all Render subdomains
+    '.vercel.app',    # Allows all Vercel subdomains
+    'gdg-techsprint-1.onrender.com',
+    'gdg-techsprint-iota.vercel.app',
+]
 
 
 # Application definition
