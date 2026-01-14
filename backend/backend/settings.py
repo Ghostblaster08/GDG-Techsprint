@@ -26,7 +26,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-ltx5xg2#elku^b#u!y*pi
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'gdg-techsprint.onrender.com,your-app.vercel.app,localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*.onrender.com,*.vercel.app,localhost,127.0.0.1').split(',')
 
 
 # Application definition
@@ -79,12 +79,26 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# Use PostgreSQL on Render, SQLite for local development
+import dj_database_url
+
+if os.environ.get('DATABASE_URL'):
+    # Production: Use PostgreSQL from Render
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=os.environ.get('DATABASE_URL'),
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
     }
-}
+else:
+    # Development: Use SQLite
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
@@ -135,8 +149,15 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    "https://gdg-techsprint-nine.vercel.app",  # Add your Vercel domain
-    "https://gdg-techsprint.onrender.com",       # Add custom domain if you have one
+    "http://localhost:5173",  # Vite dev server
+    "https://gdg-techsprint-nine.vercel.app",
+    "https://gdg-techsprint.onrender.com",
+]
+
+# Allow all Vercel preview deployments
+import re
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://.*\.vercel\.app$",
 ]
 
 # Or allow all Vercel domains (less secure):
@@ -191,3 +212,9 @@ CSRF_COOKIE_SAMESITE = 'None' if not DEBUG else 'Lax'
 
 # Trust proxy headers (important for Render)
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# CSRF Trusted Origins
+CSRF_TRUSTED_ORIGINS = [
+    "https://*.vercel.app",
+    "https://*.onrender.com",
+]
